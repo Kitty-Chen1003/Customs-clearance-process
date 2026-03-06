@@ -1,0 +1,47 @@
+name: Build Python EXE
+
+# 在以下事件时触发工作流
+on:
+  push:
+    branches:
+      - main  # 在 main 分支上提交时触发
+  pull_request:
+    branches:
+      - main  # 在 main 分支上创建 PR 时触发
+
+jobs:
+  build:
+    # 使用 Windows 最新版本的虚拟机
+    runs-on: windows-latest
+
+    steps:
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 设置 Python 环境
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'  # 使用 Python 3.10 版本
+
+      # 安装依赖
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      # 使用 PyInstaller 打包
+      - name: Build EXE
+        run: |
+          pyinstaller --onefile --hidden-import=PyQt5 --hidden-import=PyQt5.QtCore --hidden-import=PyQt5.QtGui --hidden-import=PyQt5.QtWidgets --hidden-import=PyQt5-sip main.py  # 显式指定 PyQt5 的隐藏导入
+          mkdir output
+          mv dist/main.exe output/  # 将打包好的 exe 移动到 output 目录
+
+      # 上传打包结果
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyApp-EXE
+          path: output/main.exe
